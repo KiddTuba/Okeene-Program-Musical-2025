@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The Star of Christmas | Digital Program</title>
+  <meta name="description" content="Digital program for The Star of Christmas." />
+  <style>
+    :root{
+      --shade: 0.08;          /* updated per page */
+      --accent: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.72);
+      --card: rgba(255,255,255,0.12);
+      --cardBorder: rgba(255,255,255,0.18);
+      --shadow: 0 18px 55px rgba(0,0,0,0.35);
+      --radius: 22px;
+      --maxw: 920px;
+      --title: clamp(2.1rem, 5vw, 3.4rem);
+      --h2: clamp(1.25rem, 2.4vw, 1.55rem);
+      --p: clamp(1.05rem, 1.7vw, 1.15rem);
+    }
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    body{
+      color: var(--accent);
+      background: radial-gradient(1200px 900px at 20% 20%, rgba(255,255,255,0.10), transparent 60%),
+                  radial-gradient(900px 700px at 85% 30%, rgba(255,255,255,0.08), transparent 60%),
+                  linear-gradient(180deg, #0b1222 0%, #060814 100%);
+      overflow: hidden;
+    }
+    /* global shade overlay (darkens as you swipe) */
+    #shadeOverlay{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,var(--shade));
+      pointer-events: none;
+      transition: background 260ms ease;
+      z-index: 2;
+    }
+
+    /* snow canvas */
+    #snow{
+      position: fixed; inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0.95;
+    }
+
+    /* top UI */
+    header{
+      position: fixed;
+      top: env(safe-area-inset-top);
+      left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px 10px 16px;
+      z-index: 6;
+      gap: 12px;
+    }
+    .pill{
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.26);
+      border: 1px solid rgba(255,255,255,0.14);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+      user-select: none;
+    }
+    .pill strong{
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+    }
+    .dots{
+      display:flex;
+      gap: 6px;
+      align-items:center;
+    }
+    .dot{
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      transition: transform 180ms ease, background 180ms ease;
+    }
+    .dot.active{
+      background: rgba(255,255,255,0.9);
+      transform: scale(1.28);
+    }
+    button{
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.26);
+      color: rgba(255,255,255,0.95);
+      border-radius: 999px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+      backdrop-filter: blur(10px);
+      transition: transform 120ms ease, background 180ms ease, border 180ms ease;
+    }
+    button:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,0.22); background: rgba(0,0,0,0.32); }
+    button:active{ transform: translateY(0px) scale(0.99); }
+    .navBtns{ display:flex; gap: 8px; align-items:center; }
+    .ghost{ opacity: 0.9; }
+
+    /* horizontal scroll pages */
+    #strip{
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      padding: calc(env(safe-area-inset-top) + 66px) 0 calc(env(safe-area-inset-bottom) + 22px) 0;
+    }
+    #strip::-webkit-scrollbar{ height: 0px; width: 0px; }
+    .page{
+      flex: 0 0 100%;
+      width: 100vw;
+      scroll-snap-align: start;
+      padding: 18px 18px 26px 18px;
+      display: grid;
+      place-items: center;
+    }
+    .card{
+      width: min(var(--maxw), calc(100vw - 36px));
+      border-radius: var(--radius);
+      padding: clamp(18px, 3.2vw, 36px);
+      background: var(--card);
+      border: 1px solid var(--cardBorder);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+    .card:before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(800px 300px at 20% 0%, rgba(255,255,255,0.18), transparent 60%),
+        radial-gradient(700px 320px at 90% 10%, rgba(255,255,255,0.12), transparent 60%);
+      opacity: 0.9;
+      pointer-events:none;
+    }
+    .inner{
+      position: relative;
+      z-index: 1;
+    }
+
+    h1{
+      margin: 0 0 12px 0;
+      font-size: var(--title);
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+    }
+    h2{
+      margin: 0 0 12px 0;
+      font-size: var(--h2);
+      letter-spacing: 0.02em;
+    }
+    p{
+      margin: 0;
+      font-size: var(--p);
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .sub{
+      margin-top: 10px;
+      font-size: clamp(1.05rem, 2vw, 1.2rem);
+      color: var(--muted);
+    }
+    .spacer{ height: 16px; }
+    .rule{
+      height: 1px;
+      background: rgba(255,255,255,0.14);
+      margin: 18px 0;
+    }
+
+    /* Cast list */
+    .castGrid{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (min-width: 700px){
+      .castGrid{ grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+    }
+    .castItem{
+      display:flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .role{ color: rgba(255,255,255,0.92); font-weight: 700; }
+    .actor{ color: rgba(255,255,255,0.74); font-weight: 650; }
+
+    /* Thank you list */
+    .thanks{
+      display:grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .thanksItem{
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.82);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    /* QR modal */
+    #modalBackdrop{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      z-index: 20;
+      padding: 22px;
+    }
+    #modal{
+      max-width: 520px;
+      margin: 8vh auto 0 auto;
+      background: rgba(15,18,35,0.86);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 22px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.55);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+    #modal .mInner{ padding: 18px 18px 16px 18px; }
+    #qrBox{
+      background: rgba(255,255,255,0.94);
+      border-radius: 18px;
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #modal h3{
+      margin: 0 0 10px 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+    #modal p{ margin: 10px 0 0 0; font-size: 0.98rem; color: rgba(255,255,255,0.72); }
+    #qrHint{ margin: 10px 0 0 0; font-size: 0.98rem; color: rgba(255,255,255,0.72); }
+    .mTop{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .mTop strong{ letter-spacing: 0.02em; }
+    .closeBtn{ padding: 9px 11px; }
+
+    /* small footer hint */
+    .hint{
+      margin-top: 14px;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.64);
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      #strip{ scroll-behavior: auto; }
+      button{ transition: none; }
+      #shadeOverlay{ transition: none; }
+      .dot{ transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="snow" aria-hidden="true"></canvas>
+  <div id="shadeOverlay" aria-hidden="true"></div>
+
+  <header>
+    <div class="pill" aria-label="Page indicator">
+      <strong id="pageLabel">1 / 8</strong>
+      <div class="dots" id="dots"></div>
+    </div>
+
+    <div class="navBtns">
+      <button class="ghost" id="prevBtn" aria-label="Previous page">◀</button>
+      <button class="ghost" id="nextBtn" aria-label="Next page">▶</button>
+      <button id="qrBtn" aria-haspopup="dialog" aria-controls="modalBackdrop">Show QR</button>
+    </div>
+  </header>
+
+  <main id="strip" aria-label="Digital program pages">
+    <!-- Page 1 -->
+    <section class="page" data-title="Title">
+      <article class="card">
+        <div class="inner">
+          <h1>The Star of Christmas</h1>
+          <p class="sub">An original story written and directed by Christopher Alexander</p>
+          <div class="rule"></div>
+          <p class="hint">Swipe right to turn the page.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 2 -->
+    <section class="page" data-title="Cast">
+      <article class="card">
+        <div class="inner">
+          <h2>Cast List</h2>
+          <div class="castGrid" id="castGrid"></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 3 -->
+    <section class="page" data-title="Opening Number">
+      <article class="card">
+        <div class="inner">
+          <h2>Opening Number</h2>
+          <h1 style="font-size: clamp(1.9rem, 4.4vw, 3.0rem); margin-top: 6px;">Light The Night</h1>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 4 -->
+    <section class="page" data-title="Scene One">
+      <article class="card">
+        <div class="inner">
+          <h2>Scene One</h2>
+          <h1 style="font-size: clamp(1.9rem, 4.4vw, 3.0rem); margin-top: 6px;">This Town Shines</h1>
+          <div class="spacer"></div>
+          <p id="scene1"></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 5 -->
+    <section class="page" data-title="Scene Two">
+      <article class="card">
+        <div class="inner">
+          <h2>Scene Two</h2>
+          <h1 style="font-size: clamp(1.9rem, 4.4vw, 3.0rem); margin-top: 6px;">Cookie and a Smile</h1>
+          <div class="spacer"></div>
+          <p id="scene2"></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 6 -->
+    <section class="page" data-title="Scene Three">
+      <article class="card">
+        <div class="inner">
+          <h2>Scene Three</h2>
+          <h1 style="font-size: clamp(1.9rem, 4.4vw, 3.0rem); margin-top: 6px;">Downtown</h1>
+          <div class="spacer"></div>
+          <p id="scene3"></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 7 -->
+    <section class="page" data-title="Finale">
+      <article class="card">
+        <div class="inner">
+          <h2>Scene Four Finale</h2>
+          <h1 style="font-size: clamp(1.9rem, 4.4vw, 3.0rem); margin-top: 6px;">Star of Christmas</h1>
+          <div class="spacer"></div>
+          <p id="scene4"></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Page 8 -->
+    <section class="page" data-title="Thank You">
+      <article class="card">
+        <div class="inner">
+          <h2>Thank you</h2>
+          <div class="thanks" id="thanksGrid"></div>
+          <div class="rule"></div>
+          <p>Wonderful school and community of Okeene for your continued support of the arts education of our students</p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- QR Modal -->
+  <div id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <div id="modal">
+      <div class="mTop">
+        <strong id="qrTitle">Share this program</strong>
+        <button class="closeBtn" id="closeModal" aria-label="Close">✕</button>
+      </div>
+      <div class="mInner">
+        <div id="qrBox" aria-label="QR code"></div>
+        <div id="qrHint"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === Content (all text included on pages) ===
+    const cast = [
+      ["Mara","Anna Parker"],
+      ["Lina","Finley Krause"],
+      ["Theo","Andrew Williams"],
+      ["Jonah","Blayne Walker"],
+      ["Rafe","Heath Burghardt"],
+      ["Eliora","Everlynn Cass"],
+      ["Mayor","Addison Bachmann"],
+      ["Pip & Dot","Grace & Ellana Brickman"],
+      ["Sven the Lantern Man","Ridge McGinn"],
+      ["Ingrid Blix","Peyton Long"],
+      ["Downtown 1","Adlee Voelzke"],
+      ["Downtown 2","Deacon Unruh"],
+      ["Christmas Town 1","Jyce Gutierrez"],
+      ["Christmas Town 2","Daxx Wray"],
+      ["Christmas Town 3","Caylie Wheeler"]
+    ];
+
+    const thanks = [
+      "Paige Krause for staging and props and quality control liaison",
+      "Kiley Feely, Technical Direction and quality control liaison",
+      "Quintin Wray, coaching",
+      "Sara Hauser, 3rd-grade teacher, let us use a lot of time to prep for this event",
+      "Rhonda Heckart, 4th-grade teacher, let us use a lot of time to prep for this event"
+    ];
+
+    const sceneText = {
+      scene1: "The Happy Christmas town, forever and eternally celebrating Christmas every single day. Each year, there is the Mayor's Grand Ceremony, but this year, something will change that will shake the town. Can Christmas Town survive if the Star of Christmas vanishes without a trace!?",
+      scene2: "Our troop gathers supplies, the eccentric Sven the Lantern man, Pip and Dot the knitting Twins, and the grumpy Ingrid Blix. Can our troop get on the road to find the star!?",
+      scene3: "The nefarious Downtown. The reputation of tough customers, and scary people. Why is there tidings of Christmas here in this place!?",
+      scene4: "Can we all set aside our differences and come together in this special time!?"
+    };
+
+    // === Render Cast + Thanks ===
+    const castGrid = document.getElementById("castGrid");
+    cast.forEach(([role, actor]) => {
+      const row = document.createElement("div");
+      row.className = "castItem";
+      row.innerHTML = `<span class="role">${role}</span><span class="actor">${actor}</span>`;
+      castGrid.appendChild(row);
+    });
+
+    const thanksGrid = document.getElementById("thanksGrid");
+    thanks.forEach(t => {
+      const row = document.createElement("div");
+      row.className = "thanksItem";
+      row.textContent = t;
+      thanksGrid.appendChild(row);
+    });
+
+    document.getElementById("scene1").textContent = sceneText.scene1;
+    document.getElementById("scene2").textContent = sceneText.scene2;
+    document.getElementById("scene3").textContent = sceneText.scene3;
+    document.getElementById("scene4").textContent = sceneText.scene4;
+
+    // === Page UI + shading ===
+    const strip = document.getElementById("strip");
+    const pages = Array.from(document.querySelectorAll(".page"));
+    const pageLabel = document.getElementById("pageLabel");
+    const dotsWrap = document.getElementById("dots");
+
+    const shadeByIndex = [0.06, 0.14, 0.26, 0.38, 0.52, 0.68, 0.16, 0.10]; // darker…darker…then light on finale
+
+    const dots = pages.map((_, i) => {
+      const d = document.createElement("div");
+      d.className = "dot" + (i === 0 ? " active" : "");
+      dotsWrap.appendChild(d);
+      return d;
+    });
+
+    function currentIndex(){
+      const x = strip.scrollLeft;
+      const w = strip.clientWidth || window.innerWidth;
+      return Math.max(0, Math.min(pages.length - 1, Math.round(x / w)));
+    }
+
+    function applyIndex(i){
+      pageLabel.textContent = `${i + 1} / ${pages.length}`;
+      dots.forEach((d, idx) => d.classList.toggle("active", idx === i));
+      const shade = shadeByIndex[i] ?? 0.20;
+      document.documentElement.style.setProperty("--shade", shade.toFixed(2));
+    }
+
+    let lastIdx = 0;
+    strip.addEventListener("scroll", () => {
+      const idx = currentIndex();
+      if (idx !== lastIdx){
+        lastIdx = idx;
+        applyIndex(idx);
+        // Keep URL hash in sync for sharing
+        history.replaceState(null, "", `#page-${idx+1}`);
+      }
+    }, { passive: true });
+
+    function goTo(i){
+      const idx = Math.max(0, Math.min(pages.length - 1, i));
+      const w = strip.clientWidth || window.innerWidth;
+      strip.scrollTo({ left: idx * w, behavior: "smooth" });
+    }
+
+    document.getElementById("prevBtn").addEventListener("click", () => goTo(currentIndex() - 1));
+    document.getElementById("nextBtn").addEventListener("click", () => goTo(currentIndex() + 1));
+
+    // keyboard support
+    window.addEventListener("keydown", (e) => {
+      if (document.getElementById("modalBackdrop").style.display === "block") return;
+      if (e.key === "ArrowLeft") goTo(currentIndex() - 1);
+      if (e.key === "ArrowRight") goTo(currentIndex() + 1);
+      if (e.key === "Home") goTo(0);
+      if (e.key === "End") goTo(pages.length - 1);
+    });
+
+    // Start at hash if provided
+    function bootToHash(){
+      const m = (location.hash || "").match(/page-(\d+)/i);
+      if (!m) return;
+      const n = parseInt(m[1], 10);
+      if (Number.isFinite(n)) {
+        // wait a tick so layout exists
+        requestAnimationFrame(() => goTo(n - 1));
+      }
+    }
+    bootToHash();
+    applyIndex(0);
+
+    window.addEventListener("resize", () => goTo(currentIndex()));
+
+    // === Snow (canvas) on all pages ===
+    const canvas = document.getElementById("snow");
+    const ctx = canvas.getContext("2d", { alpha: true });
+
+    let W = 0, H = 0, DPR = 1;
+    function resize(){
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      W = Math.floor(window.innerWidth * DPR);
+      H = Math.floor(window.innerHeight * DPR);
+      canvas.width = W;
+      canvas.height = H;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const flakes = [];
+    const FLAKE_COUNT = Math.round(Math.min(160, Math.max(80, window.innerWidth / 8)));
+    function rand(min, max){ return min + Math.random() * (max - min); }
+
+    function initFlakes(){
+      flakes.length = 0;
+      for (let i=0;i<FLAKE_COUNT;i++){
+        flakes.push({
+          x: rand(0, W),
+          y: rand(0, H),
+          r: rand(0.8, 2.6) * DPR,
+          vy: rand(0.55, 1.55) * DPR,
+          vx: rand(-0.35, 0.35) * DPR,
+          wobble: rand(0, Math.PI*2),
+          wobbleSpeed: rand(0.004, 0.012),
+          alpha: rand(0.25, 0.85)
+        });
+      }
+    }
+    initFlakes();
+
+    let lastT = performance.now();
+    function tick(t){
+      const dt = Math.min(34, t - lastT);
+      lastT = t;
+
+      ctx.clearRect(0,0,W,H);
+      ctx.beginPath();
+
+      for (const f of flakes){
+        f.wobble += f.wobbleSpeed * dt;
+        f.x += (f.vx + Math.sin(f.wobble) * 0.18 * DPR) * dt * 0.06;
+        f.y += f.vy * dt * 0.06;
+
+        if (f.y - f.r > H){
+          f.y = -f.r;
+          f.x = rand(0, W);
+        }
+        if (f.x < -10*DPR) f.x = W + 10*DPR;
+        if (f.x > W + 10*DPR) f.x = -10*DPR;
+
+        ctx.moveTo(f.x, f.y);
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+      }
+
+      // subtle brightness shift as it gets darker (still snowing!)
+      const shade = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--shade")) || 0.2;
+      const snowAlpha = Math.max(0.25, 0.85 - shade * 0.35);
+
+      ctx.fillStyle = `rgba(255,255,255,${snowAlpha})`;
+      ctx.fill();
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // === QR generator ===
+// Uses a reliable hosted QR image generator (requires internet when sharing).
+// If you host this program online (recommended), the QR will work for everyone.
+// === QR modal behavior ===
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const qrBox = document.getElementById("qrBox");
+    const qrHint = document.getElementById("qrHint");
+    const qrBtn = document.getElementById("qrBtn");
+    const closeModal = document.getElementById("closeModal");
+
+    function openQR(){
+      // Use the current URL (including #page-N so it opens to the same page)
+      const url = window.location.href;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}`;
+      qrBox.innerHTML = `<img src="${qrUrl}" alt="QR code" style="width:320px;height:320px;max-width:100%;border-radius:12px;"/>`;
+modalBackdrop.style.display = "block";
+
+      if (url.startsWith("file:")){
+        qrHint.textContent = "Tip: For sharing, host this file online (for example, a school website or GitHub Pages). Then the QR code will open the program on any phone.";
+}else{
+        qrHint.textContent = "Scan to open the program on a phone.";
+        // Also show the link for copy/paste
+        const linkP = document.createElement('p');
+        linkP.style.marginTop = '10px';
+        linkP.style.wordBreak = 'break-word';
+        linkP.style.fontSize = '0.95rem';
+        linkP.style.color = 'rgba(255,255,255,0.72)';
+        linkP.textContent = url;
+        qrHint.appendChild(linkP);
+}
+    }
+    function closeQR(){
+      modalBackdrop.style.display = "none";
+      qrBox.innerHTML = "";
+    }
+
+    qrBtn.addEventListener("click", openQR);
+    closeModal.addEventListener("click", closeQR);
+    modalBackdrop.addEventListener("click", (e) => { if (e.target === modalBackdrop) closeQR(); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeQR(); });
+  </script>
+</body>
+</html>
